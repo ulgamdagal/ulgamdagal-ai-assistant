@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ulgamdagal AI Chat
  * Description: Умный ИИ-чат для сайта с функцией вызова живого оператора в бот. Искусственный интеллект отвечает на вопросы клиентов 24/7, а сложные диалоги одним кликом переводит на менеджера. Для получения API-ключа напишите в Telegram: @ulgamdagal_support
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Ulgamdagal Team
  * Author URI: https://api.ulgamdagal.com
  * Requires at least: 6.2
@@ -11,6 +11,18 @@
  */
 
 defined('ABSPATH') || exit;
+require_once __DIR__ . '/plugin-update-checker/plugin-update-checker.php';
+
+$ulgamdagalUpdateChecker = \YahnisElsts\PluginUpdateChecker\v6\PucFactory::buildUpdateChecker(
+    'https://github.com/ulgamdagal/ulgamdagal-ai-assistant/',
+    __FILE__,
+    'ulgamdagal-ai-chat'
+);
+
+$ulgamdagalUpdateChecker->getVcsApi()->enableReleaseAssets(
+    '/^ulgamdagal-ai-chat-[0-9.]+\.zip$/i'
+);
+
 require_once __DIR__ . '/operator-sync.php';
 require_once __DIR__ . '/telegram-bridge.php';
 require_once __DIR__ . '/service-guard.php';
