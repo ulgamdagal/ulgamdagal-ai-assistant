@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ulgamdagal AI Chat
  * Description: Умный ИИ-чат для сайта с функцией вызова живого оператора в бот. Искусственный интеллект отвечает на вопросы клиентов 24/7, а сложные диалоги одним кликом переводит на менеджера. Для получения API-ключа напишите в Telegram: @ulgamdagal_support
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: Ulgamdagal Team
  * Author URI: https://api.ulgamdagal.com
  * Requires at least: 6.2
@@ -37,6 +37,9 @@ require_once __DIR__ . '/knowledge-sync.php';
 final class Ulgamdagal_AI_Chat {
     const OPTION = 'ulgamdagal_ai_settings';
 
+    private static $settings_hook;
+    private static $logs_hook;
+
     public static function init() {
         add_action('admin_init', array('Ulgamdagal_Widget_Settings', 'migrate'), 0);
         add_action('admin_notices', array('Ulgamdagal_Widget_Settings', 'notice'));
@@ -53,9 +56,14 @@ final class Ulgamdagal_AI_Chat {
     }
 
     public static function menu() {
-        add_options_page('Ulgamdagal AI Chat', 'Ulgamdagal AI Chat', 'manage_options', 'ulgamdagal-ai-chat', array(__CLASS__, 'page'));
-        add_management_page('Журнал AI-чата', 'Журнал AI-чата', current_user_can('manage_options') ? 'manage_options' : 'ulgamdagal_ai_manage_chats', 'ulgamdagal-ai-logs', array(__CLASS__, 'logs_page'));
-        if (!self::can_manage_chats()) { remove_submenu_page('tools.php', 'ulgamdagal-ai-logs'); }
+        if (current_user_can('manage_options')) {
+            self::$settings_hook = add_menu_page('ULGA AI Assistant', 'ULGA AI Assistant', 'manage_options', 'ulgamdagal-ai-chat', array(__CLASS__, 'page'), 'dashicons-format-chat');
+            add_submenu_page('ulgamdagal-ai-chat', 'Настройки ULGA AI Assistant', 'Настройки', 'manage_options', 'ulgamdagal-ai-chat', array(__CLASS__, 'page'));
+            self::$logs_hook = add_submenu_page('ulgamdagal-ai-chat', 'Журнал AI-чата', 'Журнал', 'manage_options', 'ulgamdagal-ai-logs', array(__CLASS__, 'logs_page'));
+        } elseif (self::can_manage_chats()) {
+            self::$logs_hook = add_menu_page('Журнал AI-чата', 'ULGA AI Assistant', 'ulgamdagal_ai_manage_chats', 'ulgamdagal-ai-logs', array(__CLASS__, 'logs_page'), 'dashicons-format-chat');
+            add_submenu_page('ulgamdagal-ai-logs', 'Журнал AI-чата', 'Журнал', 'ulgamdagal_ai_manage_chats', 'ulgamdagal-ai-logs', array(__CLASS__, 'logs_page'));
+        }
     }
 
     public static function settings() {
@@ -204,19 +212,19 @@ final class Ulgamdagal_AI_Chat {
     }
 
     public static function admin_assets($hook) {
-        if (($hook === 'settings_page_ulgamdagal-ai-chat' && current_user_can('manage_options')) || ($hook === 'tools_page_ulgamdagal-ai-logs' && self::can_manage_chats())) {
-            wp_enqueue_style('ulgamdagal-admin-ui',plugins_url('assets/admin-ui.css',__FILE__),array(),'1.1.1');
+        if (($hook === self::$settings_hook && current_user_can('manage_options')) || ($hook === self::$logs_hook && self::can_manage_chats())) {
+            wp_enqueue_style('ulgamdagal-admin-ui',plugins_url('assets/admin-ui.css',__FILE__),array(),'1.1.3');
         }
-        if ($hook === 'settings_page_ulgamdagal-ai-chat' && current_user_can('manage_options')) {
-            wp_enqueue_script('ulgamdagal-admin-ui',plugins_url('assets/admin-ui.js',__FILE__),array(),'1.1.1',true);
+        if ($hook === self::$settings_hook && current_user_can('manage_options')) {
+            wp_enqueue_script('ulgamdagal-admin-ui',plugins_url('assets/admin-ui.js',__FILE__),array(),'1.1.3',true);
         }
-        if ($hook === 'settings_page_ulgamdagal-ai-chat') {
+        if ($hook === self::$settings_hook) {
             wp_enqueue_media();
-            wp_enqueue_script('ulgamdagal-ai-colors', plugins_url('assets/appearance.js', __FILE__), array(), '1.1.1', true);
-            wp_enqueue_script('ulgamdagal-ai-chat-admin', plugins_url('assets/admin.js', __FILE__), array(), '1.1.1', true);
+            wp_enqueue_script('ulgamdagal-ai-colors', plugins_url('assets/appearance.js', __FILE__), array(), '1.1.3', true);
+            wp_enqueue_script('ulgamdagal-ai-chat-admin', plugins_url('assets/admin.js', __FILE__), array(), '1.1.3', true);
         }
-        if ($hook === 'tools_page_ulgamdagal-ai-logs' && self::can_manage_chats()) {
-            wp_enqueue_script('ulgamdagal-ai-chat-logs', plugins_url('assets/logs.js', __FILE__), array(), '1.1.1-sound-1', true);
+        if ($hook === self::$logs_hook && self::can_manage_chats()) {
+            wp_enqueue_script('ulgamdagal-ai-chat-logs', plugins_url('assets/logs.js', __FILE__), array(), '1.1.3-sound-1', true);
         }
     }
 
@@ -270,7 +278,7 @@ final class Ulgamdagal_AI_Chat {
         }
         ?>
         <div class="wrap ulg-admin ulg-admin--settings">
-        <header class="ulg-hero"><div><span class="ulg-eyebrow">Ulgamdagal · рабочее пространство</span><h1>Ваш ассистент на сайте <span class="ulg-version">1.1.1</span></h1><p>Всё для общения с клиентами: от первого ответа до помощи оператора.</p></div><a href="<?php echo esc_url(admin_url('tools.php?page=ulgamdagal-ai-logs')); ?>">Открыть журнал →</a></header>
+        <header class="ulg-hero"><div><span class="ulg-eyebrow">Ulgamdagal · рабочее пространство</span><h1>Ваш ассистент на сайте <span class="ulg-version">1.1.3</span></h1><p>Всё для общения с клиентами: от первого ответа до помощи оператора.</p></div><a href="<?php echo esc_url(admin_url('admin.php?page=ulgamdagal-ai-logs')); ?>">Открыть журнал →</a></header>
         <nav class="ulg-section-nav" aria-label="Разделы настроек"><a href="#ulg-connect">Подключение</a></nav>
         <section class="ulg-card" id="ulg-connect"><h2>Подключение к сервису</h2><p class="ulg-card-intro">Сохраните API-ключ и проверьте доступ к сервису.</p>
         <span class="ulg-key-state"><?php echo self::key() !== '' ? 'Ключ сохранён · соединение проверяется отдельно' : 'Для подключения нужен API-ключ'; ?></span>
@@ -284,7 +292,7 @@ final class Ulgamdagal_AI_Chat {
         <p><button type="submit" class="button button-primary" form="ulgamdagal-settings">Сохранить настройки</button></p>
         <div class="ulg-connection-check"><h2>Проверка соединения</h2>
         <p>Проверка соединения и сохранённого API-ключа без обращения к ИИ. После ввода ключа сначала сохраните настройки. Ожидание до 20 секунд.</p>
-        <form method="post" action="<?php echo esc_url(admin_url('options-general.php?page=ulgamdagal-ai-chat')); ?>">
+        <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=ulgamdagal-ai-chat')); ?>">
         <?php wp_nonce_field('ulgamdagal_check_connection'); ?>
         <input type="hidden" name="ulgamdagal_check" value="1">
         <?php submit_button('Проверить соединение', 'secondary', 'submit', false); ?>
@@ -1152,7 +1160,7 @@ final class Ulgamdagal_AI_Chat {
         $selected_hash = (($dialog !== '' || $number_filter !== '') && $rows) ? $rows[0]->session_hash : '';
         $operator_active = $selected_hash !== '' ? self::operator_active($selected_hash) : false;
         ?>
-        <div class="wrap ulg-admin ulg-admin--logs"><header class="ulg-hero"><div><span class="ulg-eyebrow">Ulgamdagal · переписка</span><h1>Журнал AI-чата</h1><p>Вопросы клиентов, ответы ассистента и работа операторов в одном месте.</p></div><?php if (current_user_can('manage_options')) { ?><a href="<?php echo esc_url(admin_url('options-general.php?page=ulgamdagal-ai-chat')); ?>">Настройки чата →</a><?php } ?></header><p class="ulg-journal-note">Часовой пояс сообщений и фильтров: <strong><?php echo esc_html(Ulgamdagal_Widget_Settings::zone()->getName()); ?></strong></p>
+        <div class="wrap ulg-admin ulg-admin--logs"><header class="ulg-hero"><div><span class="ulg-eyebrow">Ulgamdagal · переписка</span><h1>Журнал AI-чата</h1><p>Вопросы клиентов, ответы ассистента и работа операторов в одном месте.</p></div><?php if (current_user_can('manage_options')) { ?><a href="<?php echo esc_url(admin_url('admin.php?page=ulgamdagal-ai-chat')); ?>">Настройки чата →</a><?php } ?></header><p class="ulg-journal-note">Часовой пояс сообщений и фильтров: <strong><?php echo esc_html(Ulgamdagal_Widget_Settings::zone()->getName()); ?></strong></p>
         <?php if ($number_filter !== '' && !isset($_GET['_ulgamdagal_refresh'])) { Ulgamdagal_Server_History::render($number_filter); } ?>
         <?php if ($journal_notice) { ?><p role="status"><?php echo esc_html($journal_notice); ?></p><?php } ?>
         <div class="ulg-log-tools"><p>До 500 последних записей с учётом фильтров. IP берётся из REMOTE_ADDR соединения с WordPress. <span id="ulgamdagal-log-refresh-status">Автообновление включено.</span> <button type="button" class="button button-small" id="ulgamdagal-sound-toggle">Включить звук</button></p>
@@ -1163,7 +1171,7 @@ final class Ulgamdagal_AI_Chat {
         <label>Код диалога<br><input type="text" maxlength="16" name="number" value="<?php echo esc_attr($number_filter); ?>" placeholder="3bef9ef4a7c280d1"></label>
         <label>IP<br><input type="text" name="ip" value="<?php echo esc_attr($ip_filter); ?>" placeholder="192.0.2.15"></label>
         <?php submit_button('Фильтровать', 'secondary', 'submit', false); ?>
-        <a class="button" href="<?php echo esc_url(admin_url('tools.php?page=ulgamdagal-ai-logs')); ?>">Сбросить</a>
+        <a class="button" href="<?php echo esc_url(admin_url('admin.php?page=ulgamdagal-ai-logs')); ?>">Сбросить</a>
         </form>
         </div>
         <?php if ($selected_hash !== '' && !Ulgamdagal_Telegram_Bridge::enabled()) { ?>
@@ -1177,7 +1185,7 @@ final class Ulgamdagal_AI_Chat {
         <div class="ulg-table-scroll"><table class="widefat striped" style="margin-top:16px"><thead><tr><th>Дата</th><th>Диалог</th><th>Вопрос</th><th>Ответ</th><th>IP</th></tr></thead><tbody id="ulgamdagal-log-body">
         <?php if (!$rows) { ?><tr><td colspan="5">Записи по выбранным фильтрам не найдены.</td></tr><?php } ?>
         <?php foreach ($rows as $row) { ?>
-        <tr<?php echo strpos($row->assistant_message, 'Ответил оператор: ') === 0 ? ' style="background:#eef7ff"' : ''; ?>><td><?php echo esc_html(Ulgamdagal_Widget_Settings::date($row->created_at)); ?></td><td><a href="<?php echo esc_url(add_query_arg(array('page' => 'ulgamdagal-ai-logs', 'number' => $row->dialog_code ?: null, 'dialog' => $row->dialog_code ? null : substr($row->session_hash, 0, 10)), admin_url('tools.php'))); ?>"><code><?php echo esc_html($row->dialog_code ? $row->dialog_code : '—'); ?></code></a></td><td style="white-space:pre-wrap"><?php echo esc_html(wp_html_excerpt($row->user_message, 1000, '…')); ?></td><td style="white-space:pre-wrap"><?php echo esc_html(wp_html_excerpt($row->assistant_message, 1500, '…')); ?></td><td><?php if ($row->ip_address !== '') { ?><a href="<?php echo esc_url(add_query_arg(array('page' => 'ulgamdagal-ai-logs', 'ip' => $row->ip_address), admin_url('tools.php'))); ?>"><code><?php echo esc_html($row->ip_address); ?></code></a><br><a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('action' => 'ulgamdagal_block_ip', 'ip' => $row->ip_address), admin_url('admin-post.php')), 'ulgamdagal_block_ip_' . $row->ip_address)); ?>" onclick="return confirm('Заблокировать этот IP для AI-чата?');">Заблокировать</a><?php } ?></td></tr>
+        <tr<?php echo strpos($row->assistant_message, 'Ответил оператор: ') === 0 ? ' style="background:#eef7ff"' : ''; ?>><td><?php echo esc_html(Ulgamdagal_Widget_Settings::date($row->created_at)); ?></td><td><a href="<?php echo esc_url(add_query_arg(array('page' => 'ulgamdagal-ai-logs', 'number' => $row->dialog_code ?: null, 'dialog' => $row->dialog_code ? null : substr($row->session_hash, 0, 10)), admin_url('admin.php'))); ?>"><code><?php echo esc_html($row->dialog_code ? $row->dialog_code : '—'); ?></code></a></td><td style="white-space:pre-wrap"><?php echo esc_html(wp_html_excerpt($row->user_message, 1000, '…')); ?></td><td style="white-space:pre-wrap"><?php echo esc_html(wp_html_excerpt($row->assistant_message, 1500, '…')); ?></td><td><?php if ($row->ip_address !== '') { ?><a href="<?php echo esc_url(add_query_arg(array('page' => 'ulgamdagal-ai-logs', 'ip' => $row->ip_address), admin_url('admin.php'))); ?>"><code><?php echo esc_html($row->ip_address); ?></code></a><br><a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('action' => 'ulgamdagal_block_ip', 'ip' => $row->ip_address), admin_url('admin-post.php')), 'ulgamdagal_block_ip_' . $row->ip_address)); ?>" onclick="return confirm('Заблокировать этот IP для AI-чата?');">Заблокировать</a><?php } ?></td></tr>
         <?php } ?>
         </tbody></table></div>
         <?php if (current_user_can('manage_options')) { ?><details class="ulg-danger"><summary>Управление журналом</summary><p>Очистка удалит весь локальный журнал. Это действие нельзя отменить.</p><form method="post" onsubmit="return confirm('Удалить весь журнал без возможности восстановления?');">
@@ -1200,7 +1208,7 @@ final class Ulgamdagal_AI_Chat {
         if (!in_array($ip, $entries, true)) { $entries[] = $ip; }
         $settings['blocked_networks'] = self::sanitize_blocklist(implode("\n", $entries));
         update_option(self::OPTION, $settings);
-        wp_safe_redirect(admin_url('tools.php?page=ulgamdagal-ai-logs&blocked=1'));
+        wp_safe_redirect(admin_url('admin.php?page=ulgamdagal-ai-logs&blocked=1'));
         exit;
     }
 
@@ -1215,9 +1223,9 @@ final class Ulgamdagal_AI_Chat {
         $avatar_id = absint($settings['avatar_id'] ?? 0);
         $avatar_url = $avatar_id ? wp_get_attachment_image_url($avatar_id, 'thumbnail') : '';
         if (!$avatar_url) { $avatar_url = plugins_url('assets/avatar-default.png', __FILE__); }
-        wp_enqueue_style('ulgamdagal-ai-chat', plugins_url('assets/chat.css', __FILE__), array(), '1.1.1');
-        wp_enqueue_script('ulgamdagal-link-policy', plugins_url('assets/link-policy.js', __FILE__), array(), '1.1.1', true);
-        wp_enqueue_script('ulgamdagal-ai-chat', plugins_url('assets/chat.js', __FILE__), array('ulgamdagal-link-policy'), '1.1.1-operator-1', true);
+        wp_enqueue_style('ulgamdagal-ai-chat', plugins_url('assets/chat.css', __FILE__), array(), '1.1.3');
+        wp_enqueue_script('ulgamdagal-link-policy', plugins_url('assets/link-policy.js', __FILE__), array(), '1.1.3', true);
+        wp_enqueue_script('ulgamdagal-ai-chat', plugins_url('assets/chat.js', __FILE__), array('ulgamdagal-link-policy'), '1.1.3-operator-1', true);
         ob_start(); ?>
         <div style="<?php echo esc_attr(Ulgamdagal_Chat_Appearance::style($settings['colors'] ?? array()) . Ulgamdagal_Widget_Settings::style($settings)); ?>" class="ulgamdagal-chat-shell<?php echo $floating ? ' ulgamdagal-chat-shell--floating is-closed ulgamdagal-side-' . (($settings['widget_side'] ?? '') === 'left' ? 'left' : 'right') : ''; ?>">
         <?php if ($floating) { ?><button class="ulgamdagal-launcher" type="button" aria-expanded="false" aria-label="Открыть чат"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4.75h16v11.5H9l-5 3v-14.5Z"/></svg></button><?php } ?>
@@ -1240,9 +1248,9 @@ final class Ulgamdagal_AI_Chat {
         $settings = get_option(self::OPTION, array());
         if (empty($settings['floating_chat'])) { return; }
         if (!current_user_can('manage_options') && empty($settings['public_chat'])) { return; }
-        wp_enqueue_style('ulgamdagal-ai-chat', plugins_url('assets/chat.css', __FILE__), array(), '1.1.1');
-        wp_enqueue_script('ulgamdagal-link-policy', plugins_url('assets/link-policy.js', __FILE__), array(), '1.1.1', true);
-        wp_enqueue_script('ulgamdagal-ai-chat', plugins_url('assets/chat.js', __FILE__), array('ulgamdagal-link-policy'), '1.1.1-operator-1', true);
+        wp_enqueue_style('ulgamdagal-ai-chat', plugins_url('assets/chat.css', __FILE__), array(), '1.1.3');
+        wp_enqueue_script('ulgamdagal-link-policy', plugins_url('assets/link-policy.js', __FILE__), array(), '1.1.3', true);
+        wp_enqueue_script('ulgamdagal-ai-chat', plugins_url('assets/chat.js', __FILE__), array('ulgamdagal-link-policy'), '1.1.3-operator-1', true);
     }
 }
 Ulgamdagal_AI_Chat::init();

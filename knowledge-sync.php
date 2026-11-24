@@ -133,7 +133,7 @@ final class Ulgamdagal_Knowledge_Sync {
         if (!current_user_can('manage_options')) { wp_die('Нет доступа.'); }
         check_admin_referer('ulgamdagal_knowledge_sync');
         self::send();
-        wp_safe_redirect(admin_url('options-general.php?page=ulgamdagal-ai-chat'));exit;
+        wp_safe_redirect(admin_url('admin.php?page=ulgamdagal-ai-chat'));exit;
     }
     public static function render() {
         if (!current_user_can('manage_options')) { return; }

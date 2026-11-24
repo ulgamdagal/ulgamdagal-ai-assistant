@@ -34,7 +34,7 @@ final class Ulgamdagal_Server_History {
             if (!is_array($message) || !isset($message['role'],$message['content'],$message['created_at']) || !is_string($message['content'])) { continue; }
             echo '<article style="padding:10px;border-bottom:1px solid #ddd"><strong>' . esc_html($roles[$message['role']] ?? 'Сообщение') . '</strong> <small>' . esc_html(Ulgamdagal_Widget_Settings::date($message['created_at'], true)) . '</small><div style="white-space:pre-wrap;overflow-wrap:anywhere">' . esc_html($message['content']) . '</div></article>';
         }
-        $base = add_query_arg(array('page'=>'ulgamdagal-ai-logs','number'=>$number),admin_url('tools.php'));
+        $base = add_query_arg(array('page'=>'ulgamdagal-ai-logs','number'=>$number),admin_url('admin.php'));
         echo '<p><a href="' . esc_url($base) . '">К началу истории / обновить</a>';
         if (!empty($data['next_cursor']) && is_array($data['next_cursor'])) {
             echo ' · <a href="' . esc_url(add_query_arg('history_cursor',base64_encode(wp_json_encode($data['next_cursor'])),$base)) . '">Следующие сообщения →</a>';
